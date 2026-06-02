@@ -23,9 +23,11 @@ class TokenStore {
       return null;
     }
     try {
-      final bool authenticated = !authenticate || await _auth.authenticate(
-        localizedReason: 'Authenticate to access login token',
-      );
+      final bool authenticated =
+          !authenticate ||
+          await _auth.authenticate(
+            localizedReason: 'Authenticate to access login token',
+          );
       if (authenticated) {
         return _storage.read(key: _tokenKey);
       }
