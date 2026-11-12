@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "367679081227",
-    "project_id": "gps-traccar-e9a89",
-    "storage_bucket": "gps-traccar-e9a89.firebasestorage.app"
+    "project_number": "19718498146",
+    "project_id": "uniguardz-507204",
+    "storage_bucket": "uniguardz-507204.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:367679081227:android:46b85371a130657895300e",
+        "mobilesdk_app_id": "1:19718498146:android:e0eb974096549fb1c72e3b",
         "android_client_info": {
           "package_name": "com.uniguard.gps"
         }
@@ -15,7 +15,45 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCuLqEuuLx_Xi_PCzHuXdX_meEP4LtfMN4"
+          "current_key": "AIzaSyA_-t742TRj3BMZP3es6gytFWmL6vohOAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19718498146:android:aa3a4faa00e89ff2c72e3b",
+        "android_client_info": {
+          "package_name": "com.uniguard.uniguard_care_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_-t742TRj3BMZP3es6gytFWmL6vohOAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19718498146:android:b6cca56a8560bb8bc72e3b",
+        "android_client_info": {
+          "package_name": "com.uniguard.uniguard_z"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_-t742TRj3BMZP3es6gytFWmL6vohOAE"
         }
       ],
       "services": {

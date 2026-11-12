@@ -50,20 +50,18 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCuLqEuuLx_Xi_PCzHuXdX_meEP4LtfMN4',
-    appId: '1:367679081227:android:46b85371a130657895300e',
-    messagingSenderId: '367679081227',
-    projectId: 'gps-traccar-e9a89',
-    storageBucket: 'gps-traccar-e9a89.firebasestorage.app',
+    apiKey: 'AIzaSyA_-t742TRj3BMZP3es6gytFWmL6vohOAE',
+    appId: '1:19718498146:android:e0eb974096549fb1c72e3b',
+    messagingSenderId: '19718498146',
+    projectId: 'uniguardz-507204',
+    storageBucket: 'uniguardz-507204.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyB4ogd-Icu1rsbWpA0YmFgpiuqD17Epv7M',
-    appId: '1:367679081227:ios:446b1108fbb9ee8495300e',
-    messagingSenderId: '367679081227',
-    projectId: 'gps-traccar-e9a89',
-    storageBucket: 'gps-traccar-e9a89.firebasestorage.app',
-    iosBundleId: 'com.uniguard.GpsTraccarManager',
+    apiKey: 'AIzaSyAIOHy2arwmIp03ZMAN0-Zu_y3Aw5yeNwA',
+    appId: '1:19718498146:ios:04f8118571d5541dc72e3b',
+    messagingSenderId: '19718498146',
+    projectId: 'uniguardz-507204',
+    storageBucket: 'uniguardz-507204.firebasestorage.app',
+    iosBundleId: 'au.com.uniguard.GpsTraccarManager',
   );
-
 }
