@@ -6,10 +6,10 @@ import 'dart:io';
 
 import 'package:app_links/app_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:http/http.dart' as http;
+import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -17,6 +17,8 @@ import 'package:traccar_manager/error_screen.dart';
 import 'package:traccar_manager/main.dart';
 import 'package:traccar_manager/token_store.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+const _serverUrl = 'https://gps.uniguard.co.id';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -31,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
 
   late final AppLinks _appLinks;
   StreamSubscription<Uri>? _appLinksSubscription;
+  final List<StreamSubscription<Object?>> _firebaseSubscriptions = [];
   final _loginTokenStore = TokenStore();
   final _messaging = FirebaseMessaging.instance;
   InAppWebViewController? _controller;
@@ -106,12 +109,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _appLinksSubscription?.cancel();
+    for (final subscription in _firebaseSubscriptions) {
+      subscription.cancel();
+    }
     super.dispose();
   }
 
-  String _getUrl() {
-    return 'https://gps.uniguard.co.id';
-  }
+  String _getUrl() => _serverUrl;
 
   bool _isDownloadable(Uri uri) {
     final lastSegment = uri.pathSegments.isNotEmpty
@@ -121,10 +125,9 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _shareFile(String fileName, Uint8List bytes) async {
-    final directory = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
-    final file = File('${directory!.path}/$fileName');
+    // Temporary directory: the OS cleans it, so shared reports do not pile up in app storage.
+    final directory = await getTemporaryDirectory();
+    final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(bytes);
     await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
   }
@@ -140,7 +143,7 @@ class _MainScreenState extends State<MainScreen> {
       if (response.statusCode == 200) {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final extension = uri.pathSegments.last;
-        _shareFile('$timestamp.$extension', response.bodyBytes);
+        await _shareFile('$timestamp.$extension', response.bodyBytes);
       } else {
         developer.log('Failed file download request');
       }
@@ -175,33 +178,52 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _initNotifications() async {
     await _initialized.future;
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      final eventId = message.data['eventId'];
-      if (eventId != null) {
-        _loadUrl(Uri.parse('${_getUrl()}/event/$eventId'));
-      }
-    });
-    await _messaging.requestPermission();
+    if (!mounted) return;
+    _firebaseSubscriptions.add(
+      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+        final eventId = message.data['eventId'];
+        if (eventId != null) {
+          _loadUrl(Uri.parse('${_getUrl()}/event/$eventId'));
+        }
+      }),
+    );
+    try {
+      await _messaging.requestPermission();
+    } catch (e) {
+      developer.log('Failed to request notification permission', error: e);
+    }
     await _authenticated.future.timeout(
       const Duration(seconds: 30),
       onTimeout: () {},
     );
-    _messaging.onTokenRefresh.listen((newToken) {
-      _controller?.evaluateJavascript(
-        source: "updateNotificationToken?.('$newToken')",
-      );
-    });
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      final notification = message.notification;
-      if (notification != null) {
-        _controller?.evaluateJavascript(
-          source: "handleNativeNotification?.(${jsonEncode(message.toMap())})",
-        );
-        messengerKey.currentState?.showSnackBar(
-          SnackBar(content: Text(notification.body ?? 'Unknown')),
-        );
-      }
-    });
+    if (!mounted) return;
+    // The server expects FCM registration tokens, so keep `onTokenRefresh`/`getToken` (deprecated in
+    // firebase_messaging 17 in favour of installation IDs) instead of `onRegistered`.
+    _firebaseSubscriptions.add(
+      // ignore: deprecated_member_use
+      _messaging.onTokenRefresh.listen(_sendNotificationToken),
+    );
+    _firebaseSubscriptions.add(
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        final notification = message.notification;
+        if (notification != null) {
+          _controller?.evaluateJavascript(
+            source:
+                'handleNativeNotification?.(${jsonEncode(message.toMap())})',
+          );
+          messengerKey.currentState?.showSnackBar(
+            SnackBar(content: Text(notification.body ?? 'Unknown')),
+          );
+        }
+      }),
+    );
+  }
+
+  /// Passes [token] to the web app. The value is JSON-encoded so it can never break out of the script.
+  void _sendNotificationToken(String token) {
+    _controller?.evaluateJavascript(
+      source: 'updateNotificationToken?.(${jsonEncode(token)})',
+    );
   }
 
   void _handleWebMessage(String message) async {
@@ -212,11 +234,10 @@ class _MainScreenState extends State<MainScreen> {
           await _loginTokenStore.save(parts[1]);
         }
         try {
+          // ignore: deprecated_member_use
           final notificationToken = await _messaging.getToken();
           if (notificationToken != null) {
-            _controller?.evaluateJavascript(
-              source: "updateNotificationToken?.('$notificationToken')",
-            );
+            _sendNotificationToken(notificationToken);
           }
         } catch (e) {
           developer.log('Failed to get notification token', error: e);
@@ -225,7 +246,7 @@ class _MainScreenState extends State<MainScreen> {
         final loginToken = await _loginTokenStore.read(true);
         if (loginToken != null) {
           _controller?.evaluateJavascript(
-            source: "handleLoginToken?.('$loginToken')",
+            source: 'handleLoginToken?.(${jsonEncode(loginToken)})',
           );
         }
       case 'authenticated':
@@ -234,7 +255,7 @@ class _MainScreenState extends State<MainScreen> {
         await _loginTokenStore.delete();
       case 'download':
         try {
-          _shareFile('report.xlsx', base64Decode(parts[1]));
+          await _shareFile('report.xlsx', base64Decode(parts[1]));
         } catch (e) {
           developer.log('Failed to save downloaded file', error: e);
         }
@@ -373,7 +394,7 @@ class _MainScreenState extends State<MainScreen> {
               }
               if (uri.authority != Uri.parse(_getUrl()).authority) {
                 try {
-                  launchUrl(uri, mode: LaunchMode.externalApplication);
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
                 } catch (e) {
                   developer.log('Failed to launch url', error: e);
                 }

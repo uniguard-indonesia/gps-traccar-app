@@ -29,7 +29,7 @@ class TokenStore {
             localizedReason: 'Authenticate to access login token',
           );
       if (authenticated) {
-        return _storage.read(key: _tokenKey);
+        return await _storage.read(key: _tokenKey);
       }
     } on LocalAuthException catch (e) {
       developer.log('Failed to read token.', error: e);
@@ -40,6 +40,10 @@ class TokenStore {
   }
 
   Future<void> delete() async {
-    _storage.delete(key: _tokenKey);
+    try {
+      await _storage.delete(key: _tokenKey);
+    } on PlatformException catch (e) {
+      developer.log('Failed to delete token.', error: e);
+    }
   }
 }
