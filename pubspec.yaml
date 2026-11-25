@@ -1,7 +1,7 @@
 name: traccar_manager
 description: "Traccar Manager"
 publish_to: "none"
-version: 2.4.0+8
+version: 2.4.1+9
 
 environment:
   sdk: ^3.10.4
@@ -19,7 +19,7 @@ dependencies:
   local_auth: ^3.0.1
   material_ui: ^1.11.0
   path_provider: ^2.1.5
-  permission_handler: ^12.0.1
+  permission_handler: ^13.0.1
   rate_my_app: ^2.4.0
   share_plus: ^13.1.0
   url_launcher: ^6.3.2
